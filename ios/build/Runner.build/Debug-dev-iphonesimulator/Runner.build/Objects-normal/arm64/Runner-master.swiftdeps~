@@ -1,0 +1,6 @@
+version: "Apple Swift version 5.7 (swiftlang-5.7.0.127.4 clang-1400.0.29.50)"
+options: "30129fdab60c2b6926ccf526422c32eeaf977e92398617a1f3865e443f34b1d4"
+build_start_time: [1673355942, 829982995]
+build_end_time: [1673355942, 853221893]
+inputs:
+  "/Users/chityeaung/Projects/Flutter/jnote/ios/Runner/AppDelegate.swift": !private [1670223529, 893720149]
