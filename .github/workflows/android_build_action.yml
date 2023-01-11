@@ -38,7 +38,7 @@ jobs:
       # Upload generated apk to the artifacts.
       - uses: actions/upload-artifact@v1
         with:
-          name: android_prod_v1
+          name: android_dev_v1
           path: build/app/outputs/flutter-apk/app-armeabi-v7a-dev-release.apk
 
       # Build apk for prod.
