@@ -13,7 +13,7 @@
 
 - [JNote Design](https://www.figma.com/file/h7m7ID7RwzN9ukRsqSPsw9/App-Designs?node-id=189%3A921&t=aTQDnFvtCbx8nvLT-1)
 
-### Others CMDs (No Need Do if you don't have to change flavorizr and icons)
+### Others CMDs (No need to do if you don't have to change flavorizr and icons)
 
 _to generate flavors_
 
