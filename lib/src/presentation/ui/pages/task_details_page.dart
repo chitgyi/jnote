@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:jnote/src/di/locator.dart';
 import 'package:jnote/src/presentation/notifiers/task_details_notifier.dart';
 import 'package:jnote/src/presentation/ui/widgets/common/custom_check_box.dart';
 import 'package:jnote/src/utils/constants/jnote_icons.dart';
 import 'package:jnote/src/utils/constants/strings.dart';
+import 'package:provider/provider.dart';
 
-class TaskDetailsPage extends ConsumerWidget {
+class TaskDetailsPage extends StatelessWidget {
   const TaskDetailsPage({
     Key? key,
     required this.id,
@@ -14,8 +15,7 @@ class TaskDetailsPage extends ConsumerWidget {
   final int id;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    ref.read(taskDeatilsProvider).loadTask(id);
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(50.0),
@@ -57,45 +57,35 @@ class TaskDetailsPage extends ConsumerWidget {
           ),
         ),
       ),
-      body: const _TaskDetailBody(),
+      body: ChangeNotifierProvider<TaskDetailsNotifier>(
+        create: (BuildContext context) => di.get()..loadTask(id),
+        child: const _TaskDetailBody(),
+      ),
     );
   }
 }
 
-class _TaskDetailBody extends ConsumerWidget {
+class _TaskDetailBody extends StatelessWidget {
   const _TaskDetailBody({
     Key? key,
   }) : super(key: key);
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final provider = ref.watch(taskDeatilsProvider);
-
-    return provider.viewState.when(
-      failed: (msg) => Center(child: Text(msg)),
-      success: (task) {
-        final formKey = GlobalKey<FormState>();
-
-        final desController = TextEditingController(text: task.description);
-        final titleController = TextEditingController(text: task.title);
-        bool isChecked = task.isCompleted;
-        return Form(
-          key: formKey,
-          child: ListView(
+  Widget build(BuildContext context) {
+    return Consumer<TaskDetailsNotifier>(
+      builder: (context, notifier, child) => notifier.viewState.when(
+        failed: (msg) => Center(child: Text(msg)),
+        success: (task) {
+          bool isChecked = task.isCompleted;
+          return ListView(
             padding: const EdgeInsets.all(16.0),
             children: [
               CustomCheckBox(
                 isChecked: isChecked,
                 onChanged: (value) => isChecked = value,
               ),
-              TextFormField(
-                validator: (value) {
-                  if (value != null && value.isNotEmpty) {
-                    return null;
-                  }
-                  return '*Required';
-                },
-                controller: titleController,
+              TextField(
+                controller: notifier.titleController,
                 decoration: InputDecoration(
                   hintText: title,
                   border: OutlineInputBorder(
@@ -104,14 +94,8 @@ class _TaskDetailBody extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 16.0),
-              TextFormField(
-                validator: (value) {
-                  if (value != null && value.isNotEmpty) {
-                    return null;
-                  }
-                  return '*Required';
-                },
-                controller: desController,
+              TextField(
+                controller: notifier.desController,
                 maxLines: 15,
                 decoration: InputDecoration(
                   hintText: description,
@@ -126,16 +110,20 @@ class _TaskDetailBody extends ConsumerWidget {
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () {
-                        if (formKey.currentState!.validate()) {
-                          provider.updateTask(
-                            task.copyWith(
-                              title: titleController.text,
-                              description: desController.text,
-                              isCompleted: isChecked,
-                            ),
-                          );
-                          context.pop();
-                        }
+                        notifier
+                            .updateTask(
+                              task.copyWith(
+                                title: notifier.titleController.text,
+                                description: notifier.desController.text,
+                                isCompleted: isChecked,
+                              ),
+                            )
+                            .catchError(
+                              (msg) => ScaffoldMessenger.of(context)
+                                  .showSnackBar(
+                                      SnackBar(content: Text(msg.toString()))),
+                            )
+                            .then((value) => context.pop());
                       },
                       child: const Padding(
                         padding: EdgeInsets.all(14.0),
@@ -149,10 +137,8 @@ class _TaskDetailBody extends ConsumerWidget {
                       backgroundColor: MaterialStateProperty.all(Colors.grey),
                     ),
                     onPressed: () {
-                      if (formKey.currentState!.validate()) {
-                        provider.deleteTask(task);
-                        context.pop();
-                      }
+                      notifier.deleteTask(task);
+                      context.pop();
                     },
                     child: const Padding(
                       padding: EdgeInsets.all(14.0),
@@ -162,10 +148,10 @@ class _TaskDetailBody extends ConsumerWidget {
                 ],
               )
             ],
-          ),
-        );
-      },
-      loading: () => const Center(child: CircularProgressIndicator()),
+          );
+        },
+        loading: () => const Center(child: CircularProgressIndicator()),
+      ),
     );
   }
 }

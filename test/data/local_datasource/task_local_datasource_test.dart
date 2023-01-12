@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_test/hive_test.dart';
-import 'package:jnote/src/data/local_datasource/impl/task_local_datasource.dart';
+import 'package:jnote/src/data/local_datasource/impl/task_local_datasource_impl.dart';
 import 'package:jnote/src/domain/entities/task.dart';
 import 'package:jnote/src/utils/helpers/register_hive_adapters.dart';
 

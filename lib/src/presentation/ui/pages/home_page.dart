@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:jnote/src/di/locator.dart';
 import 'package:jnote/src/domain/entities/task.dart';
 import 'package:jnote/src/presentation/notifiers/tasks_notifier.dart';
 import 'package:jnote/src/presentation/ui/widgets/common/custom_tap_bar.dart';
 import 'package:jnote/src/presentation/ui/widgets/home/task_list_view.dart';
 import 'package:jnote/src/utils/constants/jnote_icons.dart';
 import 'package:jnote/src/utils/constants/strings.dart';
+import 'package:provider/provider.dart';
 
-class HomePage extends ConsumerWidget {
+class HomePage extends StatelessWidget {
   const HomePage({
     Key? key,
     this.onTapItem,
@@ -17,8 +18,7 @@ class HomePage extends ConsumerWidget {
   final VoidCallback? onTapAdd;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    ref.read(tasksProvider).loadTasks();
+  Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
         final result = await showExitDialog(context);
@@ -29,7 +29,10 @@ class HomePage extends ConsumerWidget {
           children: [
             const _AppBar(),
             Expanded(
-              child: _TabBar(onTapItem: onTapItem),
+              child: ChangeNotifierProvider<TasksNotifier>(
+                create: (_) => di.get(),
+                child: _TabBar(onTapItem: onTapItem),
+              ),
             )
           ],
         ),
@@ -74,7 +77,7 @@ class HomePage extends ConsumerWidget {
   }
 }
 
-class _TabBar extends ConsumerWidget {
+class _TabBar extends StatelessWidget {
   const _TabBar({
     Key? key,
     required this.onTapItem,
@@ -83,29 +86,37 @@ class _TabBar extends ConsumerWidget {
   final void Function(Task task)? onTapItem;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final tasks = ref.watch(tasksProvider).tasks;
-    return CustomTabBar(
-      tabViews: [
-        TaskListView(
-          onTapItem: onTapItem,
-          tasks: tasks.where((element) => !element.isCompleted).toList(),
-        ),
-        TaskListView(
-          onTapItem: onTapItem,
-          tasks: tasks.where((element) => element.isCompleted).toList(),
-        ),
-      ],
-      items: const [
-        CustomTabItem(
-          iconData: JNoteIcons.inprogress,
-          text: remainingTasks,
-        ),
-        CustomTabItem(
-          iconData: JNoteIcons.completed,
-          text: completedTasks,
-        ),
-      ],
+  Widget build(BuildContext context) {
+    context.read<TasksNotifier>().loadTasks();
+    return Consumer<TasksNotifier>(
+      builder: (context, notifer, child) {
+        return CustomTabBar(
+          tabViews: [
+            TaskListView(
+              onTapItem: onTapItem,
+              tasks: notifer.tasks
+                  .where((element) => !element.isCompleted)
+                  .toList(),
+            ),
+            TaskListView(
+              onTapItem: onTapItem,
+              tasks: notifer.tasks
+                  .where((element) => element.isCompleted)
+                  .toList(),
+            ),
+          ],
+          items: const [
+            CustomTabItem(
+              iconData: JNoteIcons.inprogress,
+              text: remainingTasks,
+            ),
+            CustomTabItem(
+              iconData: JNoteIcons.completed,
+              text: completedTasks,
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -126,7 +137,7 @@ class _AppBar extends StatelessWidget {
         children: [
           SizedBox(height: MediaQuery.of(context).padding.top * 0.6),
           Text(
-            "JNote",
+            appName,
             style: Theme.of(context)
                 .textTheme
                 .headlineSmall
