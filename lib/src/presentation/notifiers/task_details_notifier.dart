@@ -19,14 +19,9 @@ class TaskDetailsNotifier extends ChangeNotifier {
   final UseCase<Task, Task> _updateTask;
   final UseCase<void, Task> _deleteTask;
 
-  final desController = TextEditingController();
-  final titleController = TextEditingController();
-
   Future<void> loadTask(int id) async {
     try {
       final value = await _getTask(id);
-      titleController.text = value.title;
-      desController.text = value.description;
       viewState = ViewState.success(value);
     } on DbException catch (e) {
       viewState = ViewState.failed(e.message);
@@ -35,9 +30,6 @@ class TaskDetailsNotifier extends ChangeNotifier {
   }
 
   Future<void> updateTask(Task task) async {
-    if (task.description.isEmpty || task.title.isEmpty) {
-      return Future.error('Please enter title and description');
-    }
     await _updateTask(task);
   }
 

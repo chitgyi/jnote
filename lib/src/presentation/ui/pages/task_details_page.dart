@@ -72,85 +72,99 @@ class _TaskDetailBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<TaskDetailsNotifier>(
-      builder: (context, notifier, child) => notifier.viewState.when(
-        failed: (msg) => Center(child: Text(msg)),
-        success: (task) {
-          bool isChecked = task.isCompleted;
-          return ListView(
-            padding: const EdgeInsets.all(16.0),
-            children: [
-              CustomCheckBox(
-                isChecked: isChecked,
-                onChanged: (value) => isChecked = value,
-              ),
-              TextField(
-                controller: notifier.titleController,
-                decoration: InputDecoration(
-                  hintText: title,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.0),
+    final formKey = GlobalKey<FormState>();
+    return Form(
+      key: formKey,
+      autovalidateMode: AutovalidateMode.always,
+      child: Consumer<TaskDetailsNotifier>(
+        builder: (context, notifier, child) => notifier.viewState.when(
+          failed: (msg) => Center(child: Text(msg)),
+          success: (task) {
+            final desController = TextEditingController(text: task.title);
+            final titleController =
+                TextEditingController(text: task.description);
+            bool isChecked = task.isCompleted;
+            return ListView(
+              padding: const EdgeInsets.all(16.0),
+              children: [
+                CustomCheckBox(
+                  isChecked: isChecked,
+                  onChanged: (value) => isChecked = value,
+                ),
+                TextFormField(
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return '*Please enter title...';
+                    }
+                    return null;
+                  },
+                  controller: titleController,
+                  decoration: InputDecoration(
+                    hintText: title,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 16.0),
-              TextField(
-                controller: notifier.desController,
-                maxLines: 15,
-                decoration: InputDecoration(
-                  hintText: description,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.0),
+                const SizedBox(height: 16.0),
+                TextFormField(
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return '*Please enter description...';
+                    }
+                    return null;
+                  },
+                  controller: desController,
+                  maxLines: 15,
+                  decoration: InputDecoration(
+                    hintText: description,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 16.0),
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
+                const SizedBox(height: 16.0),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          if (formKey.currentState!.validate()) {
+                            notifier.updateTask(task.copyWith(
+                              title: titleController.text,
+                              description: desController.text,
+                              isCompleted: isChecked,
+                            ));
+                            context.pop();
+                          }
+                        },
+                        child: const Padding(
+                          padding: EdgeInsets.all(14.0),
+                          child: Text(update),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 14.0),
+                    ElevatedButton(
+                      style: ButtonStyle(
+                        backgroundColor: MaterialStateProperty.all(Colors.grey),
+                      ),
                       onPressed: () {
-                        notifier
-                            .updateTask(
-                              task.copyWith(
-                                title: notifier.titleController.text,
-                                description: notifier.desController.text,
-                                isCompleted: isChecked,
-                              ),
-                            )
-                            .catchError(
-                              (msg) => ScaffoldMessenger.of(context)
-                                  .showSnackBar(
-                                      SnackBar(content: Text(msg.toString()))),
-                            )
-                            .then((value) => context.pop());
+                        notifier.deleteTask(task);
+                        context.pop();
                       },
                       child: const Padding(
                         padding: EdgeInsets.all(14.0),
-                        child: Text(update),
+                        child: Text(deleteTask),
                       ),
-                    ),
-                  ),
-                  const SizedBox(width: 14.0),
-                  ElevatedButton(
-                    style: ButtonStyle(
-                      backgroundColor: MaterialStateProperty.all(Colors.grey),
-                    ),
-                    onPressed: () {
-                      notifier.deleteTask(task);
-                      context.pop();
-                    },
-                    child: const Padding(
-                      padding: EdgeInsets.all(14.0),
-                      child: Text(deleteTask),
-                    ),
-                  )
-                ],
-              )
-            ],
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
+                    )
+                  ],
+                )
+              ],
+            );
+          },
+          loading: () => const Center(child: CircularProgressIndicator()),
+        ),
       ),
     );
   }

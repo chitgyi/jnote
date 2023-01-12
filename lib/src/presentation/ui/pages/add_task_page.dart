@@ -69,44 +69,63 @@ class _AddTaskForm extends StatelessWidget {
   Widget build(BuildContext context) {
     final desController = TextEditingController();
     final titleController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
 
-    return ListView(
-      padding: const EdgeInsets.all(16.0),
-      children: [
-        TextField(
-          controller: titleController,
-          decoration: InputDecoration(
-            hintText: title,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8.0),
+    return Form(
+      autovalidateMode: AutovalidateMode.always,
+      key: formKey,
+      child: ListView(
+        padding: const EdgeInsets.all(16.0),
+        children: [
+          TextFormField(
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return '*Please enter title...';
+              }
+              return null;
+            },
+            controller: titleController,
+            decoration: InputDecoration(
+              hintText: title,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8.0),
+              ),
             ),
           ),
-        ),
-        const SizedBox(height: 16.0),
-        TextFormField(
-          controller: desController,
-          maxLines: 15,
-          decoration: InputDecoration(
-            hintText: description,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8.0),
+          const SizedBox(height: 16.0),
+          TextFormField(
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return '*Please enter description...';
+              }
+              return null;
+            },
+            controller: desController,
+            maxLines: 15,
+            decoration: InputDecoration(
+              hintText: description,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8.0),
+              ),
             ),
           ),
-        ),
-        const SizedBox(height: 16.0),
-        ElevatedButton(
-          onPressed: () {
-            context
-                .read<AddTaskProvider>()
-                .saveTask(titleController.text, desController.text);
-            context.pop();
-          },
-          child: const Padding(
-            padding: EdgeInsets.all(14.0),
-            child: Text(addTask),
-          ),
-        )
-      ],
+          const SizedBox(height: 16.0),
+          ElevatedButton(
+            onPressed: () {
+              if (formKey.currentState!.validate()) {
+                context
+                    .read<AddTaskProvider>()
+                    .saveTask(titleController.text, desController.text);
+                context.pop();
+              }
+            },
+            child: const Padding(
+              padding: EdgeInsets.all(14.0),
+              child: Text(addTask),
+            ),
+          )
+        ],
+      ),
     );
   }
 }
