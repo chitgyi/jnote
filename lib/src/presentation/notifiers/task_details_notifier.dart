@@ -1,14 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:injectable/injectable.dart';
-import 'package:jnote/src/di/locator.dart';
 import 'package:jnote/src/domain/entities/task.dart';
 import 'package:jnote/src/domain/usecases/usecase.dart';
 import 'package:jnote/src/presentation/notifiers/view_state.dart';
 import 'package:jnote/src/utils/exceptions/db_exception.dart';
-
-final taskDeatilsProvider =
-    ChangeNotifierProvider<TaskDetailsNotifier>((ref) => di.get());
 
 @injectable
 class TaskDetailsNotifier extends ChangeNotifier {
@@ -31,7 +26,6 @@ class TaskDetailsNotifier extends ChangeNotifier {
     } on DbException catch (e) {
       viewState = ViewState.failed(e.message);
     }
-
     notifyListeners();
   }
 

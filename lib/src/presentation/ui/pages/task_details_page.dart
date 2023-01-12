@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:jnote/src/di/locator.dart';
 import 'package:jnote/src/presentation/notifiers/task_details_notifier.dart';
 import 'package:jnote/src/presentation/ui/widgets/common/custom_check_box.dart';
 import 'package:jnote/src/utils/constants/jnote_icons.dart';
 import 'package:jnote/src/utils/constants/strings.dart';
+import 'package:provider/provider.dart';
 
-class TaskDetailsPage extends ConsumerWidget {
+class TaskDetailsPage extends StatelessWidget {
   const TaskDetailsPage({
     Key? key,
     required this.id,
@@ -14,8 +15,7 @@ class TaskDetailsPage extends ConsumerWidget {
   final int id;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    ref.read(taskDeatilsProvider).loadTask(id);
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(50.0),
@@ -57,115 +57,115 @@ class TaskDetailsPage extends ConsumerWidget {
           ),
         ),
       ),
-      body: const _TaskDetailBody(),
+      body: ChangeNotifierProvider<TaskDetailsNotifier>(
+        create: (BuildContext context) => di.get()..loadTask(id),
+        child: const _TaskDetailBody(),
+      ),
     );
   }
 }
 
-class _TaskDetailBody extends ConsumerWidget {
+class _TaskDetailBody extends StatelessWidget {
   const _TaskDetailBody({
     Key? key,
   }) : super(key: key);
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final provider = ref.watch(taskDeatilsProvider);
-
-    return provider.viewState.when(
-      failed: (msg) => Center(child: Text(msg)),
-      success: (task) {
-        final formKey = GlobalKey<FormState>();
-
-        final desController = TextEditingController(text: task.description);
-        final titleController = TextEditingController(text: task.title);
-        bool isChecked = task.isCompleted;
-        return Form(
-          key: formKey,
-          child: ListView(
-            padding: const EdgeInsets.all(16.0),
-            children: [
-              CustomCheckBox(
-                isChecked: isChecked,
-                onChanged: (value) => isChecked = value,
-              ),
-              TextFormField(
-                validator: (value) {
-                  if (value != null && value.isNotEmpty) {
+  Widget build(BuildContext context) {
+    final formKey = GlobalKey<FormState>();
+    return Form(
+      key: formKey,
+      autovalidateMode: AutovalidateMode.always,
+      child: Consumer<TaskDetailsNotifier>(
+        builder: (context, notifier, child) => notifier.viewState.when(
+          failed: (msg) => Center(child: Text(msg)),
+          success: (task) {
+            final desController = TextEditingController(text: task.title);
+            final titleController =
+                TextEditingController(text: task.description);
+            bool isChecked = task.isCompleted;
+            return ListView(
+              padding: const EdgeInsets.all(16.0),
+              children: [
+                CustomCheckBox(
+                  isChecked: isChecked,
+                  onChanged: (value) => isChecked = value,
+                ),
+                TextFormField(
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return '*Please enter title...';
+                    }
                     return null;
-                  }
-                  return '*Required';
-                },
-                controller: titleController,
-                decoration: InputDecoration(
-                  hintText: title,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.0),
+                  },
+                  controller: titleController,
+                  decoration: InputDecoration(
+                    hintText: title,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 16.0),
-              TextFormField(
-                validator: (value) {
-                  if (value != null && value.isNotEmpty) {
+                const SizedBox(height: 16.0),
+                TextFormField(
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return '*Please enter description...';
+                    }
                     return null;
-                  }
-                  return '*Required';
-                },
-                controller: desController,
-                maxLines: 15,
-                decoration: InputDecoration(
-                  hintText: description,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.0),
+                  },
+                  controller: desController,
+                  maxLines: 15,
+                  decoration: InputDecoration(
+                    hintText: description,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 16.0),
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        if (formKey.currentState!.validate()) {
-                          provider.updateTask(
-                            task.copyWith(
+                const SizedBox(height: 16.0),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          if (formKey.currentState!.validate()) {
+                            notifier.updateTask(task.copyWith(
                               title: titleController.text,
                               description: desController.text,
                               isCompleted: isChecked,
-                            ),
-                          );
-                          context.pop();
-                        }
+                            ));
+                            context.pop();
+                          }
+                        },
+                        child: const Padding(
+                          padding: EdgeInsets.all(14.0),
+                          child: Text(update),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 14.0),
+                    ElevatedButton(
+                      style: ButtonStyle(
+                        backgroundColor: MaterialStateProperty.all(Colors.grey),
+                      ),
+                      onPressed: () {
+                        notifier.deleteTask(task);
+                        context.pop();
                       },
                       child: const Padding(
                         padding: EdgeInsets.all(14.0),
-                        child: Text(update),
+                        child: Text(deleteTask),
                       ),
-                    ),
-                  ),
-                  const SizedBox(width: 14.0),
-                  ElevatedButton(
-                    style: ButtonStyle(
-                      backgroundColor: MaterialStateProperty.all(Colors.grey),
-                    ),
-                    onPressed: () {
-                      if (formKey.currentState!.validate()) {
-                        provider.deleteTask(task);
-                        context.pop();
-                      }
-                    },
-                    child: const Padding(
-                      padding: EdgeInsets.all(14.0),
-                      child: Text(deleteTask),
-                    ),
-                  )
-                ],
-              )
-            ],
-          ),
-        );
-      },
-      loading: () => const Center(child: CircularProgressIndicator()),
+                    )
+                  ],
+                )
+              ],
+            );
+          },
+          loading: () => const Center(child: CircularProgressIndicator()),
+        ),
+      ),
     );
   }
 }

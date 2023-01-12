@@ -28,7 +28,8 @@ class TaskLocalDatasourceImpl implements TaskLocalDatasource {
 
   @override
   Future<Task> save(String title, String description) async {
-    final id = (await _openBox).keys.length + 1;
+    final id =
+        (await _openBox).keys.isEmpty ? 1 : (await _openBox).keys.last + 1;
     final task = Task(id, title, description);
     update(task);
     return task;
